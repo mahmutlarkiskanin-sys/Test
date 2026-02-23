@@ -1,139 +1,231 @@
 local lp = game.Players.LocalPlayer
+local run = game:GetService("RunService")
+local players = game:GetService("Players")
+local uis = game:GetService("UserInputService")
+local proximity = game:GetService("ProximityPromptService")
+local old = lp.PlayerGui:FindFirstChild("PenguenV2")
+if old then old:Destroy() end
+
 local gui = Instance.new("ScreenGui", lp.PlayerGui)
-gui.Name = "BayPenguenPanel"
+gui.Name = "PenguenV2"
 gui.ResetOnSpawn = false
 
 local tgl = Instance.new("TextButton", gui)
-tgl.Size = UDim2.new(0, 65, 0, 65)
-tgl.Position = UDim2.new(0, 15, 0.5, -30)
+tgl.Size = UDim2.new(0, 55, 0, 55)
+tgl.Position = UDim2.new(0, 10, 0.4, 0)
 tgl.Text = "🐧"
-tgl.TextSize = 35
+tgl.TextSize = 28
 tgl.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 tgl.TextColor3 = Color3.fromRGB(255, 255, 255)
+tgl.ZIndex = 10
 tgl.Active = true
 tgl.Draggable = true
 Instance.new("UICorner", tgl).CornerRadius = UDim.new(1, 0)
-local stroke = Instance.new("UIStroke", tgl)
-stroke.Color = Color3.fromRGB(255, 255, 255)
-stroke.Thickness = 2
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 350, 0, 400)
-main.Position = UDim2.new(0.5, -175, 0.5, -200)
+main.Size = UDim2.new(0, 240, 0, 400)
+main.Position = UDim2.new(0.5, -120, 0.5, -200)
 main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-main.Visible = false
+main.Visible = true
 main.Active = true
 main.Draggable = true
-Instance.new("UICorner", main)
-
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 50)
-title.Text = "BAY PENGUEN"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 24
-Instance.new("UICorner", title)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 5)
 
 local container = Instance.new("ScrollingFrame", main)
-container.Size = UDim2.new(1, -20, 1, -70)
-container.Position = UDim2.new(0, 10, 0, 60)
+container.Size = UDim2.new(1, -12, 1, -12)
+container.Position = UDim2.new(0, 6, 0, 6)
 container.BackgroundTransparency = 1
-container.CanvasSize = UDim2.new(0, 0, 3, 0)
+container.AutomaticCanvasSize = Enum.AutomaticSize.Y
 container.ScrollBarThickness = 2
-Instance.new("UIListLayout", container).Padding = UDim.new(0, 10)
+local layout = Instance.new("UIListLayout", container)
+layout.Padding = UDim.new(0, 6)
 
 local function createBtn(txt, color, func)
     local b = Instance.new("TextButton", container)
-    b.Size = UDim2.new(1, 0, 0, 45)
+    b.Size = UDim2.new(1, 0, 0, 38)
     b.Text = txt
     b.BackgroundColor3 = color
-    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.TextColor3 = Color3.new(1, 1, 1)
     b.Font = Enum.Font.SourceSansBold
-    b.TextSize = 17
-    Instance.new("UICorner", b)
-    b.MouseButton1Click:Connect(func)
+    b.TextSize = 13
+    b.TextWrapped = true
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+    b.MouseButton1Click:Connect(function() pcall(func, b) end)
     return b
 end
 
-task.spawn(function()
-    while true do
-        pcall(function()
-            if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-                lp.Character.Humanoid.WalkSpeed = 300
+_G.savedPos = nil
+_G.hitbox = true
+_G.instantSteal = false
+
+proximity.PromptButtonHoldBegan:Connect(function(prompt)
+    if _G.instantSteal then
+        task.delay(3.5, function()
+            local sp = workspace:FindFirstChildOfClass("SpawnLocation")
+            if sp and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+                lp.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0, 3, 0)
             end
         end)
-        task.wait(0.5)
     end
 end)
 
-local platActive = false
-local plat = nil
-createBtn("PLATFORM (ON/OFF)", Color3.fromRGB(0, 120, 200), function()
-    platActive = not platActive
-    if platActive then
-        plat = Instance.new("Part", workspace)
-        plat.Size = Vector3.new(15, 1, 15)
-        plat.Anchored = true
-        plat.Transparency = 0.6
-        plat.BrickColor = BrickColor.new("Cyan")
-        task.spawn(function()
-            while platActive and task.wait() do
-                if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-                    plat.CFrame = lp.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
-                end
-            end
-            if plat then plat:Destroy() end
+run.Stepped:Connect(function()
+    if lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+        local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+        hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        hum:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
+        if hum.PlatformStand then hum.PlatformStand = false end
+    end
+end)
+
+createBtn("TELEPORT: SAVE POS", Color3.fromRGB(0, 162, 255), function()
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        _G.savedPos = lp.Character.HumanoidRootPart.CFrame
+    end
+end)
+
+createBtn("TELEPORT: LOAD POS", Color3.fromRGB(170, 0, 255), function()
+    if _G.savedPos and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.CFrame = _G.savedPos
+    end
+end)
+
+createBtn("SPEED BYPASS (275)", Color3.fromRGB(200, 50, 50), function(b)
+    _G.speed = not _G.speed
+    if _G.speed then
+        b.Text = "SPEED: ON"
+        b.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        _G.sConn = run.Heartbeat:Connect(function()
+            local char = lp.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if hum and root and hum.MoveDirection.Magnitude > 0 then
+                root.CFrame = root.CFrame + (hum.MoveDirection * (275 / 60))
+            end 
         end)
     else
-        if plat then plat:Destroy() end
-    end
-end)
-
-createBtn("SPEED 300", Color3.fromRGB(40, 150, 40), function() 
-    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-        lp.Character.Humanoid.WalkSpeed = 300 
-    end
-end)
-
-createBtn("SUPER JUMP", Color3.fromRGB(40, 40, 150), function() 
-    if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-        lp.Character.Humanoid.JumpPower = 150 
-    end
-end)
-
-createBtn("PLAYER ESP", Color3.fromRGB(150, 40, 40), function()
-    for _, p in pairs(game.Players:GetPlayers()) do
-        if p ~= lp and p.Character and p.Character:FindFirstChild("Head") then
-            if not p.Character.Head:FindFirstChild("BillboardGui") then
-                local b = Instance.new("BillboardGui", p.Character.Head)
-                b.AlwaysOnTop = true
-                b.Size = UDim2.new(0, 100, 0, 50)
-                local l = Instance.new("TextLabel", b)
-                l.Size = UDim2.new(1, 0, 1, 0)
-                l.Text = p.Name
-                l.TextColor3 = Color3.new(1, 1, 1)
-                l.BackgroundTransparency = 1
-                l.TextStrokeTransparency = 0
-            end
-        end
-    end
-end)
-
-local savedPos = nil
-createBtn("SAVE POSITION", Color3.fromRGB(180, 130, 0), function() 
-    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-        savedPos = lp.Character.HumanoidRootPart.CFrame 
-    end
-end)
-
-createBtn("TELEPORT TO SAVE", Color3.fromRGB(180, 50, 0), function() 
-    if savedPos and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then 
-        lp.Character.HumanoidRootPart.CFrame = savedPos 
+        b.Text = "SPEED: OFF"
+        b.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        if _G.sConn then _G.sConn:Disconnect() end
     end 
 end)
 
-tgl.MouseButton1Click:Connect(function() 
-    main.Visible = not main.Visible 
+createBtn("INSTANT STEAL: OFF", Color3.fromRGB(120, 0, 0), function(b)
+    _G.instantSteal = not _G.instantSteal
+    b.Text = _G.instantSteal and "INSTANT STEAL: ON" or "INSTANT STEAL: OFF"
+    b.BackgroundColor3 = _G.instantSteal and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
 end)
 
+createBtn("TP SPAWN", Color3.fromRGB(50, 150, 50), function()
+    local sp = workspace:FindFirstChildOfClass("SpawnLocation")
+    if sp and lp.Character then
+        lp.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0, 3, 0)
+    end 
+end)
+
+createBtn("TP END", Color3.fromRGB(85, 170, 85), function()
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.CFrame = CFrame.new(6.3, 339.9, -3250.2)
+    end 
+end)
+
+createBtn("PLATFORM (ON/OFF)", Color3.fromRGB(0, 120, 200), function()
+    _G.platActive = not _G.platActive
+    if _G.platActive then
+        _G.platPart = Instance.new("Part", workspace)
+        _G.platPart.Size = Vector3.new(18, 1, 18)
+        _G.platPart.Anchored = true
+        _G.platPart.Transparency = 0.5
+        _G.platPart.BrickColor = BrickColor.new("Cyan")
+        _G.pConn = run.Heartbeat:Connect(function()
+            if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and _G.platPart then
+                _G.platPart.CFrame = lp.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
+            end 
+        end)
+    else
+        if _G.pConn then _G.pConn:Disconnect() end
+        if _G.platPart then _G.platPart:Destroy() end
+    end 
+end)
+
+createBtn("LOW GRAVITY", Color3.fromRGB(140, 100, 200), function() workspace.Gravity = 45 end)
+createBtn("NORMAL GRAVITY", Color3.fromRGB(100, 100, 100), function() workspace.Gravity = 196.2 end)
+createBtn("ESP", Color3.fromRGB(120, 0, 120), function() _G.esp = not _G.esp end)
+
+run.RenderStepped:Connect(function()
+    for _, p in pairs(players:GetPlayers()) do
+        if p ~= lp and p.Character then
+            local hl = p.Character:FindFirstChild("Highlight")
+            if _G.esp then
+                if not hl then hl = Instance.new("Highlight", p.Character) end
+                hl.FillColor = Color3.fromRGB(255, 0, 0)
+            else if hl then hl:Destroy() end end
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                if _G.hitbox then
+                    hrp.Size = Vector3.new(40, 40, 40)
+                    hrp.CanCollide = false
+                    hrp.Transparency = 0.8
+                else
+                    hrp.Size = Vector3.new(2, 2, 1)
+                    hrp.CanCollide = true
+                    hrp.Transparency = 0
+                end 
+            end 
+        end 
+    end 
+end)
+
+local pList = Instance.new("Frame", container)
+pList.Size = UDim2.new(1, 0, 0, 0)
+pList.AutomaticSize = Enum.AutomaticSize.Y
+pList.BackgroundTransparency = 1
+Instance.new("UIListLayout", pList).Padding = UDim.new(0, 5)
+
+local function refresh()
+    for _, v in pairs(pList:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end
+    for _, p in pairs(players:GetPlayers()) do
+        if p ~= lp then
+            local r = Instance.new("Frame", pList)
+            r.Size = UDim2.new(1, 0, 0, 36)
+            r.BackgroundTransparency = 1
+            
+            local b = Instance.new("TextButton", r)
+            b.Size = UDim2.new(0.65, 0, 1, 0)
+            b.Text = "TP: "..p.Name:sub(1,10)
+            b.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+            b.TextColor3 = Color3.new(1, 1, 1)
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
+            b.MouseButton1Click:Connect(function() if p.Character then lp.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame end end)
+
+            local j = Instance.new("TextButton", r)
+            j.Size = UDim2.new(0.3, 0, 1, 0)
+            j.Position = UDim2.new(0.7, 0, 0, 0)
+            j.Text = "FAKE JAIL"
+            j.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+            j.TextColor3 = Color3.new(1, 1, 1)
+            j.TextSize = 10
+            Instance.new("UICorner", j).CornerRadius = UDim.new(0, 4)
+            j.MouseButton1Click:Connect(function()
+                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local tPos = p.Character.HumanoidRootPart.CFrame
+                    lp.Character.HumanoidRootPart.CFrame = tPos * CFrame.new(0,0,-4)
+                    local cf = Instance.new("Part", workspace)
+                    cf.Size = Vector3.new(12, 15, 12)
+                    cf.CFrame = tPos
+                    cf.Anchored = true
+                    cf.CanCollide = true
+                    cf.BrickColor = BrickColor.new("Really black")
+                    cf.Material = Enum.Material.ForceField
+                    cf.Transparency = 0.5
+                    task.delay(8, function() cf:Destroy() end)
+                end
+            end)
+        end 
+    end 
+end
+
+createBtn("REFRESH PLAYERS", Color3.fromRGB(60, 60, 60), refresh)
+tgl.MouseButton1Click:Connect(function() main.Visible = not main.Visible end)
+refresh()
