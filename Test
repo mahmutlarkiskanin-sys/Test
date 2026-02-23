@@ -1,0 +1,208 @@
+local lp = game.Players.LocalPlayer
+local run = game:GetService("RunService")
+local players = game:GetService("Players")
+local uis = game:GetService("UserInputService")
+local proximity = game:GetService("ProximityPromptService")
+local old = lp.PlayerGui:FindFirstChild("PenguenV2")
+if old then old:Destroy() end
+
+local gui = Instance.new("ScreenGui", lp.PlayerGui)
+gui.Name = "PenguenV2"
+gui.ResetOnSpawn = false
+
+local tgl = Instance.new("TextButton", gui)
+tgl.Size = UDim2.new(0, 55, 0, 55)
+tgl.Position = UDim2.new(0, 10, 0.4, 0)
+tgl.Text = "🐧"
+tgl.TextSize = 28
+tgl.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+tgl.TextColor3 = Color3.fromRGB(255, 255, 255)
+tgl.ZIndex = 10
+tgl.Active = true
+tgl.Draggable = true
+Instance.new("UICorner", tgl).CornerRadius = UDim.new(1, 0)
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 240, 0, 380)
+main.Position = UDim2.new(0.5, -120, 0.5, -190)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+main.Visible = true
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main)
+
+local container = Instance.new("ScrollingFrame", main)
+container.Size = UDim2.new(1, -12, 1, -12)
+container.Position = UDim2.new(0, 6, 0, 6)
+container.BackgroundTransparency = 1
+container.AutomaticCanvasSize = Enum.AutomaticSize.Y
+container.ScrollBarThickness = 2
+local layout = Instance.new("UIListLayout", container)
+layout.Padding = UDim.new(0, 6)
+
+local function createBtn(txt, color, func)
+    local b = Instance.new("TextButton", container)
+    b.Size = UDim2.new(1, 0, 0, 38)
+    b.Text = txt
+    b.BackgroundColor3 = color
+    b.TextColor3 = Color3.new(1, 1, 1)
+    b.Font = Enum.Font.SourceSansBold
+    b.TextSize = 13
+    b.TextWrapped = true
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function() pcall(func, b) end)
+    return b
+end
+
+_G.hitbox = true
+_G.instantSteal = false
+
+proximity.PromptButtonHoldBegan:Connect(function(prompt)
+    if _G.instantSteal then
+        task.delay(3.5, function()
+            local sp = workspace:FindFirstChildOfClass("SpawnLocation")
+            if sp and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+                lp.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0, 3, 0)
+            end
+        end)
+    end
+end)
+
+createBtn("SPEED BYPASS (275)", Color3.fromRGB(200, 50, 50), function(b)
+    _G.speed = not _G.speed
+    if _G.speed then
+        b.Text = "SPEED: ON"
+        b.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        _G.sConn = run.Heartbeat:Connect(function()
+            local char = lp.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if hum and root and hum.MoveDirection.Magnitude > 0 then
+                root.CFrame = root.CFrame + (hum.MoveDirection * (275 / 60))
+            end 
+        end)
+    else
+        b.Text = "SPEED: OFF"
+        b.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        if _G.sConn then _G.sConn:Disconnect() end
+    end 
+end)
+
+createBtn("INSTANT STEAL (NOT WORKING FUSING)", Color3.fromRGB(255, 150, 0), function(b)
+    _G.instantSteal = not _G.instantSteal
+    b.BackgroundColor3 = _G.instantSteal and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(255, 150, 0)
+end)
+
+createBtn("TP SPAWN", Color3.fromRGB(50, 150, 50), function()
+    local sp = workspace:FindFirstChildOfClass("SpawnLocation")
+    if sp and lp.Character then
+        lp.Character.HumanoidRootPart.CFrame = sp.CFrame * CFrame.new(0, 3, 0)
+    end 
+end)
+
+createBtn("TP END", Color3.fromRGB(85, 170, 85), function()
+    if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+        lp.Character.HumanoidRootPart.CFrame = CFrame.new(6.3, 339.9, -3250.2)
+    end 
+end)
+
+createBtn("PLATFORM (ON/OFF)", Color3.fromRGB(0, 120, 200), function()
+    _G.platActive = not _G.platActive
+    if _G.platActive then
+        _G.platPart = Instance.new("Part", workspace)
+        _G.platPart.Size = Vector3.new(18, 1, 18)
+        _G.platPart.Anchored = true
+        _G.platPart.Transparency = 0.5
+        _G.platPart.BrickColor = BrickColor.new("Cyan")
+        _G.pConn = run.Heartbeat:Connect(function()
+            if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and _G.platPart then
+                _G.platPart.CFrame = lp.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
+            end 
+        end)
+    else
+        if _G.pConn then _G.pConn:Disconnect() end
+        if _G.platPart then _G.platPart:Destroy() end
+    end 
+end)
+
+createBtn("LOW GRAVITY", Color3.fromRGB(140, 100, 200), function() workspace.Gravity = 45 end)
+createBtn("NORMAL GRAVITY", Color3.fromRGB(100, 100, 100), function() workspace.Gravity = 196.2 end)
+createBtn("ESP", Color3.fromRGB(120, 0, 120), function() _G.esp = not _G.esp end)
+
+run.RenderStepped:Connect(function()
+    for _, p in pairs(players:GetPlayers()) do
+        if p ~= lp and p.Character then
+            local hl = p.Character:FindFirstChild("Highlight")
+            if _G.esp then
+                if not hl then hl = Instance.new("Highlight", p.Character) end
+                hl.FillColor = Color3.fromRGB(255, 0, 0)
+            else if hl then hl:Destroy() end end
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                if _G.hitbox then
+                    hrp.Size = Vector3.new(40, 40, 40)
+                    hrp.CanCollide = false
+                    hrp.Transparency = 0.8
+                else
+                    hrp.Size = Vector3.new(2, 2, 1)
+                    hrp.CanCollide = true
+                    hrp.Transparency = 0
+                end 
+            end 
+        end 
+    end 
+end)
+
+local pList = Instance.new("Frame", container)
+pList.Size = UDim2.new(1, 0, 0, 0)
+pList.AutomaticSize = Enum.AutomaticSize.Y
+pList.BackgroundTransparency = 1
+Instance.new("UIListLayout", pList).Padding = UDim.new(0, 5)
+
+local function refresh()
+    for _, v in pairs(pList:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end
+    for _, p in pairs(players:GetPlayers()) do
+        if p ~= lp then
+            local r = Instance.new("Frame", pList)
+            r.Size = UDim2.new(1, 0, 0, 36)
+            r.BackgroundTransparency = 1
+            
+            local b = Instance.new("TextButton", r)
+            b.Size = UDim2.new(0.65, 0, 1, 0)
+            b.Text = "TP: "..p.Name:sub(1,10)
+            b.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+            b.TextColor3 = Color3.new(1, 1, 1)
+            Instance.new("UICorner", b)
+            b.MouseButton1Click:Connect(function() if p.Character then lp.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame end end)
+
+            local j = Instance.new("TextButton", r)
+            j.Size = UDim2.new(0.3, 0, 1, 0)
+            j.Position = UDim2.new(0.7, 0, 0, 0)
+            j.Text = "FAKE JAIL"
+            j.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+            j.TextColor3 = Color3.new(1, 1, 1)
+            j.TextSize = 10
+            Instance.new("UICorner", j)
+            j.MouseButton1Click:Connect(function()
+                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local tPos = p.Character.HumanoidRootPart.CFrame
+                    lp.Character.HumanoidRootPart.CFrame = tPos * CFrame.new(0,0,-4)
+                    local cf = Instance.new("Part", workspace)
+                    cf.Size = Vector3.new(12, 15, 12)
+                    cf.CFrame = tPos
+                    cf.Anchored = true
+                    cf.CanCollide = true
+                    cf.BrickColor = BrickColor.new("Really black")
+                    cf.Material = Enum.Material.ForceField
+                    cf.Transparency = 0.5
+                    task.delay(8, function() cf:Destroy() end)
+                end
+            end)
+        end 
+    end 
+end
+
+createBtn("REFRESH PLAYERS", Color3.fromRGB(60, 60, 60), refresh)
+tgl.MouseButton1Click:Connect(function() main.Visible = not main.Visible end)
+refresh()
+
